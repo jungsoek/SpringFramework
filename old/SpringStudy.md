@@ -616,7 +616,7 @@ name="http://www.naver.com"
    
    ```
 
-# 의존성 주입 /// 여기서부터 ///
+# 의존성 주입
 
 ## 의존성 관리
 
@@ -629,11 +629,42 @@ name="http://www.naver.com"
 
 ![image-20250408151024867](./assets/image-20250408151024867.png)
 
-이 중에서 컨테이너가 애플리케이션 운용에 필요한 객체를 생성하고 클라이언트는 컨테이너가 생성한 객체를 검색(Lookup)하여 사용하는 방식을 Dependency Lookup이라고 한다. Dependency Lookup은 우리가 지금까지 컨테이너를 사용해왔던 방법이다. 하지만 Dependency Lookup은 실제 애플리케이션 개발 과정에서는 사용하지 않으며, 대부분 Dependency Injection을 사용하여 개발한다.
+이 중에서 컨테이너가 애플리케이션 운용에 필요한 객체를 생성하고 클라이언트는 컨테이너가 생성한 객체를 검색(Lookup)하여 사용하는 방식을 Dependency Lookup이라고 한다. Dependency Lookup은 지금까지 컨테이너를 사용해왔던 방법이다. 하지만 Dependency Lookup은 실제 애플리케이션 개발 과정에서는 사용하지 않으며, 대부분 Dependency Injection을 사용하여 개발한다.
+
+Dependency Lookup은 객체 사이의 의존관계를 스프링 설정 파일에 등록된 정보를 바탕으로 컨테이너가 자동으로 처리해 준다. 따라서 의존성 설정을 바꾸고 싶을 때 프로그램 코드를 수정하지 않고 스프링 설정 파일 수정만으로 변경사항을 적용할 수 있어서 유지보수가 향상된다.
+
+Dependency Injection은 컨테이너가 직접 객체들 사이에 의존관계를 처리하는 것을 의미하며, 이것은 다시 Setter 메소드를 기반으로 하는 세터 인젝션(Setter Injection)과 생성자를 기본으로 하는 생성자 인젝션(Constructor Injection)으로 나뉜다.
 
 ### 의존성 관계
 
 의존성(Dependency) 관계란 객체와 객체의 결합 관계이다. 즉, 하나의 객체에서 다른 객체의 변수나 메소드를 이용해야 한다면 이용하려는 객체에 대한 객체 생성과 생성된 객체의 레퍼런스 정보가 필요하다.
+
+
+
+위 그림에서 SamsungTV는 SoneySpeaker의 메소드를 이용해서 기능을 수행한다. 따라서 SamsungTV는 SonySpeaker 타입의 speaker 변수를 멤버변수로 가지고 있으며, speaker 변수는 SonySpeaker 객체를 참조하고 있어야 한다. 따라서 SamsungTV 클래스 어딘가에는 SonySpeaker 클래스에 대한 객체 생성 코드가 반드시 필요하다.
+
+의존관계를 테스트하기 위해서 다음과 같이 SonySpeaker 클래스를 추가로 작성한다.
+
+*SonySpeaker.java*
+
+```java
+```
+
+그리고 SamsungTV 클래스의 불륨 조절 기능을 SonySpeaker가 이용하도록 수정한다.
+
+*SamsungTV.java*
+
+```java
+```
+
+클라이언트가 volumeUp()과 volumeDown() 중 어떤 메소드를 먼저 호출할지 모르기 때문에 두 메소드에 SonySpeaker 객체 생성 코드를 모두 작성했다. 이제 TVUser 클라이언트 프로그램을 실행하면 다음과 같이 잘 실행된다.
+
+```
+```
+
+하지만 이 프로그램에는 두 가지 문제가 있다. 첫 번째는 SonySpeaker 객체가 쓸데 없이 두 개나 생성되는 것이고, 두 번째는 운영 과정에서 SonySpeaker의 성능이 떨어져서 SonySpeaker를 AppleSpeaker 같은 다른 Speaker로 변경하고자 할 때, volumeUp(), volumeDown() 두 개의 메소드를 모두 수정해야 한다.
+
+이러한 문제가 발생하는 이유는 의존관계에 있는 Speaker 객체에 대한 객체 생성 코드를 직접 SamsungTV 소스에 명시했기 때문이다. 스프링은 이 문제를 의존성 주입(Dependency Injection)을 이용하여 해결한다.
 
 ## 생성자 인젝션 이용하기
 
@@ -641,15 +672,116 @@ name="http://www.naver.com"
 
 생성자 인젝션을 테스트하기 위해서 SamsungTV 클래스에 생성자를 추가한다.
 
+*SamsungTV.java*
+
+```java
+```
+
+SamsungTV 클래스에 추가된 두 번째 생성자는 SonySpeaker 객체를 매개변수로 받아서 멤버 변수로 선언된 speaker를 초기화한다.
+
+**※ 이클립스 생성자 추가**
+
+이클립스에서 단축키를 이용하면 쉽게 생성자를 추가할 수 있다. 이클립스 편집 창에 SamsungTV 클래스를 연 상태에서 Alt + Shift + S 키를 누르고 Generate Constructor using Fields를 선택한다.
+
+그리고 초기화할 멤버변수를 선택한 후에 OK를 누르면 생성자가 추가된다.
+
+이를 위한 XML 설정은 다음과 같다.
+
+*applicationContext.xml*
+
+```xml
+```
+
+생성자 인젝션을 위해서는 SamsungTV 클래스 `<bean>` 등록 설정에서 시작 태그와 종료 태그 사이에 `<constructor-arg>` 엘리먼트를 추가하면 된다. 그리고 생성자 인자로 전달할 객체의 아이디를 `<constructor-arg>` 엘리먼트에 ref 속성으로 참조한다.
+
+실행 결과는 다음과 같은데, 실행 결과를 통해서 두 가지 사실을 확인하기 바란다. 첫 번째는 SamsungTV 클래스의 객체가 생성될 때, 기본 생성자가 아닌 두 번째 생성자가 사용됐다는 점이고, 두 번째는 스프링 설정 파일에 SonySpeaker가 SamsungTV 클래스 밑에 등록되었는데도 먼저 생성되고 있다는 점이다.
+
+```
+```
+
+스프링 컨테이너는 기본적으로 bean 등록된 순서대로 객체를 생성하며, 모든 객체는 기본 생성자 호출을 원칙으로 한다. 그런데 생성자 인젝션으로 의존성 주입될 SonySpeaker가 먼저 객체 생성되었으며, SonySpeaker 객체를 매개변수로 받아들이는 생성자를 호출하여 객체를 생성하였다. 결국 SamsungTV는 SonySpeaker 객체를 참조할 수 있으므로 문제없이 볼륨 조절을 처리할 수 있게 되었다.
+
 ### 다중 변수 매핑
 
 생성자 인젝션에서 초기화해야 할 멤버변수가 여러 개이면, 여러 개의 값을 한꺼번에 전달해야 한다. 이때는 다음처럼 생성자를 적절하게 추가하면 된다.
+
+*SamsungTV.java*
+
+```java
+```
+
+그리고 스프링 설정 파일에 `<constructor-arg>` 엘리먼트를 매개변수의 개수만큼 추가해야 한다.
+
+*applicationContext.xml*
+
+```xml
+```
+
+`<constructor-arg>` 엘리먼트에는 ref와 value 속성을 사용하여 생성자 매개변수로 전달할 값을 지정할 수 있다. 이때 인자로 전달될 데이터가 `<bean>`으로 등록된 다른 객체일 때는 ref 속성을 이용하여 해당 객체의 아이디나 이름을 참조하지만, 고정된 문자열이나 정수 같은 기본형 데이터일 때는 value 속성을 사용한다. 따라서 SonySpeaker 객체를 생성자 인자로 전달할 때는 ref 속성을 이용했지만, 2700000이라는 정숫값을 전달할 때는 value 속성을 사용하였다.
+
+이렇게 설정한 후에 TVUser 프로그램을 실행하면 다음과 같은 결과가 출력된다.
+
+```
+```
+
+그런데 생성자가 여러 개 오버로딩 되어있다면 어떤 생성자를 호출해야 할지 분명하지 않을 수 있다. 이를 위해 index 속성을 지원하며, index 속성을 이용하면 어떤 값이 몇 번째 매개변수로 매핑되는지 지정할 수 있다. index는 0부터 시작한다.
+
+*applicationContext.xml*
+
+```xml
+
+```
 
 ### 의존관계 변경
 
 지금까지는 SamsungTV 객체가 SonySpeaker를 이용하여 동작했지만 유지보수 과정에서 다른 스피커로 교체하는 상황도 발생할 것이다. 의존성 주입은 이런 상황을 매우 효과적으로 처리해준다.
 
 실습을 위해 모든 스피커의 최상위 부모로 사용할 Speaker 인터페이스를 추가한다.
+
+*Samsung.java*
+
+```java
+```
+
+**※ 이클립스에서 인터페이스 자동 생성**
+
+인터페이스를 만들 때, 이클립스의 단축키 Alt + Shift + T를 이용하면 쉽게 인터페이스를 추가할 수 있다. 만약 Speaker 인터페이스를 직접 입력해서 만들었다면 삭제한다. 그리고 SonySpeaker 클래스를 편집 창에 띄운 상태에서 Alt + Shift + T 키를 누르고 Extract Interface를 선택한다.
+
+그리고 생성할 인터페이스 이름과 추상 메소드로 포함할 메소드를 적절하게 선택한다. 오른쪽에 Select All을 클릭하면 모든 메소드가 포함된다. 나머지 불필요한 체크박스는 전부 해제한 후에 OK를 클릭하면 인터페이스가 자동으로 생성된다.
+
+그리고 Speaker 인터페이스를 구현한 또 다른 스피커인 AppleSpeaker를 추가로 구현한다.
+
+*AppleSpeaker.java*
+
+```java
+```
+
+기존의 SonySpeaker 클래스 역시 Speaker 인터페이스를 implements 하도록 수정해야 한다. 물론 SonySpeaker 클래스를 이용하여 Speaker 인터페이스를 자동 생성했다면 자동으로 implements가 추가되어 있을 것이다.
+
+```java
+
+```
+
+그러고 나서 SamsungTV 클래스의 멤버변수와 매개변수 타입을 모두 Speaker로 수정하면 된다.
+
+*SamsungTV.java*
+
+```java
+```
+
+마지막으로 AppleSpeaker도 스프링 설정 파일에 `<bean>` 등록하고, `<constructor-arg>` 엘리먼트의 속성값을 apple로 지정하면 SamsungTV가 AppleSpeaker를 이용하여 볼륨을 조절한다.
+
+*applicationContext.xml*
+
+```xml
+```
+
+TVUser 프로그램을 다시 실행하면 다음과 같이 실행되는 Speaker가 AppleSpeaker로 변경된 것을 확인할 수 있다.
+
+```
+```
+
+결국 스프링 설정 파일만 적절히 관리하면 동작하는 TV도 변경할 수 있고, TV가 사용하는 스피커도 변경할 수 있다. 여기에서 핵심은 이 과정에서 어떤 자바 코드도 변경하지 않는다는 것이다.
 
 ## Setter 인젝션 이용하기
 
@@ -659,9 +791,75 @@ name="http://www.naver.com"
 
 Setter 인젝션을 테스트하기 위해 SamsungTV 클래스에 Setter 메소드를 추가한다.
 
+*SamsungTV.java*
+
+```java
+```
+
+Setter 메소드는 스프링 컨테이너가 자동으로 호출되며, 호출하는 시점은 `<bean>` 객체 생성 직후이다. 따라서 Setter 인젝션이 동작하려면 Setter 메소드뿐만 아니라 기본 생성자도 반드시 필요하다.
+
+**※ 이클립스에서 Setter 메소드 자동 생성**
+
+Setter 메소드를 만들 때, 이클립스의 단축키 Alt + Shift + s 를 이용하면 쉽다. 단축키를 누르고 Generate Getters and Setters를 선택한다.
+
+그리고 오른쪽에 Select Setters를 클릭하면 멤버변수를 기준으로 Setter 메소드들이 생성된다.
+
+Setter 인젝션을 이용하려면 스프링 설정 파일에 `<constructor-arg>` 엘리먼트 대신 `<property>` 엘리먼트를 사용해야 한다.
+
+*applicationContext.xml*
+
+```xml
+```
+
+Setter 인젝션을 이용하려면 `<property>` 엘리먼트를 사용해야 하며 name 속성값이 호출하고자 하는 메소드 이름이다. 즉, name 속성값이 "speaker"라고 설정되어 있으면 호출되는 메소드는 setSpeaker()이다. 변수 이름에서 첫 글자를 대문자로 바꾸고 앞에 "set"을 붙인 것이 호출할 메소드 이름이다.
+
+Setter 메소드와 `<property>` 엘리먼트의 name 속성의 관계에 대해 샘플 몇 가지를 살펴보자.
+
+| Setter 메소드 이름 | name 속성값        |
+| ------------------ | ------------------ |
+| setSpeaker()       | name="speaker"     |
+| setAddressList()   | name="addressList" |
+| setBoardDAO()      | name="boardDAO"    |
+
+생성자 인젝션과 마찬가지로 Setter 메소드를 호출하면서 다른 `<bean>` 객체를 인자로 넘기려면 ref 속성을 사용하고, 기본형 데이터를 넘기려면 value 속성을 ㅏ용한다.
+
+앞에서 작성한 프로그램의 실행 결과는 다음과 같다.
+
+```
+
+```
+
 ### p 네임스페이스 사용하기
 
 Setter 인젝션을 설정할 때, 'p 네임스페이스'를 이용하면 좀 더 효율적으로 의존성 주입을 처리할 수 있다. p 네임스페이스는 네임스페이스에 대한 별도의 schemaLocation이 없다. 따라서 네임스페이스만 적절히 선언하고 사용할 수 있다.
+
+*applicationContext.xml*
+
+```xml
+```
+
+p 네임스페이스를 선언했으면 다음과 같이 참조형 변수에 참조할 객체를 할당할 수 있다.
+
+```
+```
+
+기본형이나 문자형 변수에 직접 값을 설정할 때는 다음과 같이 사용한다.
+
+```
+```
+
+다음은 p 네임스페이스를 이용하여 SamsungTV와 SonySpeaker의 의존성 주입을 설정한 것이다.
+
+*applicationContext.xml*
+
+```xml
+```
+
+**※ STS 기능으로 p 네임스페이스 추가**
+
+p 네임스페이스를 추가할 때 STS 기능을 이용하면 편하다. 스프링 설정 파일에서 Namespaces 탭을 선택하고 p 네임스페이스를 체크한다.
+
+p 네임스페이스를 체크하고 Source 탭을 눌러 확인해보면 `<bean>` 엘리먼트에 p 네임스페이스가 추가된 것을 확인할 수 있다.
 
 ## 컬렉션(Collection) 객체 설정
 
@@ -680,17 +878,82 @@ Setter 인젝션을 설정할 때, 'p 네임스페이스'를 이용하면 좀 �
 
 배열 객체나 java.util.List 타입의 컬렉션 객체는 `<list>` 태그를 사용하여 설정한다. 먼저 List 컬렉션을 멤버변수로 가지는 CollectionBean 클래스를 다음과 같이 작성한다.
 
+*CollectionBean.java*
+
+```java
+```
+
+작성된 CollectionBean 클래스를 스프링 설정 파일에 다음과 같이 `<bean>` 등록한다.
+
+*applicationContext.xml*
+
+```xml
+```
+
+위의 설정은 두 개의 문자열 주소가 저장된 List 객체를 CollectionBean 객체의 setAddressList() 메소드를 호출할 때, 인자로 절달하여 addressList 멤버변수를 초기화하는 과정이다.
+
+이제 간단한 클라이언트 프로그램을 작성하여 List 컬렉션이 정상적으로 의존성 주입되었는지 확인해본다.
+
+*CollectionBeanClient.java*
+
+```java
+```
+
+작성된 모든 파일을 저장하고 실행하면 다음과 같은 결과가 출력된다.
+
+```
+
+```
+
 ### Set 타입 매핑
 
-중복 값을 허용하지 않는 집합 객체를 사용할 때는 java.util.Set이라는 컬렉션을 사용한다. 컬렉션 객체는 `set` 태그를 사용하여 설정할 수 있다.
+중복 값을 허용하지 않는 집합 객체를 사용할 때는 java.util.Set이라는 컬렉션을 사용한다. 컬렉션 객체는 `<set>` 태그를 사용하여 설정할 수 있다.
+
+*Java 파일*
+
+```java
+```
+
+*XML 설정 파일*
+
+```xml
+```
+
+위의 예는 setAddressList() 메소드를 호출할 때, 문자열 타입의 데이터 여러 개를 저장한 Set 컬렉션을 인자로 전달하겠다는 설정이다. 그런데 위 설정을 보면 "서울시 성동구 성수동"이라는 주소가 두 번 등록된 것을 확인할 수 있다. 그러나 Set 컬렉션은 같은 데이터를 중복해서 저장하지 않으므로 실제 실행해보면 "서울시 성동구 성수동"이라는 주소는 하나만 저장된다.
 
 ### Map 타입 매핑
 
 특정 Key로 데이터를 등록하고 사용할 때는 java.util.Map 컬렉션을 사용하며, `<map>` 태그를 사용하여 사용하여 설정할 수 있다.
 
+*Java 파일*
+
+```java
+```
+
+*XML 설정 파일*
+
+```xml
+```
+
+위의 예는 setAddressList() 메소드가 호출될 때, Map 타입의 객체를 인자로 전달하는 설정이다. 이때 `<entry>` 엘리먼트에서 사용된 `<key>` 엘리먼트는 Map 객체의 key 값을 설정할 때 사용하며, `<value>` 엘리먼트는 Map 객체의 value를 설정할 때 사용한다.
+
 ### Properties 타입 매핑
 
 key=value 형태의 데이터를 등록하고 사용할 때는 java.util.Properties라는 컬렉션을 사용하며, `props` 엘리먼트를 사용하여 설정한다.
+
+*Java 파일*
+
+```java
+```
+
+XML 설정 파일
+
+```xml
+```
+
+위의 예는 setAddressList() 메소드를 호출할 때, java.util.Properties 타입의 객체를 인자로 전달하는 설정이다. 
+
+지금까지 살펴본 컬렉션 매핑은 당분간 사용할 일이 없다. 하지만 이후에 Spring MVC 부분을 다룰 때 매우 자주 사용한다. 
 
 # 어노테이션 기반 설정
 
@@ -700,15 +963,68 @@ key=value 형태의 데이터를 등록하고 사용할 때는 java.util.Propert
 
 ### Context 네임스페이스 추가
 
-어노테이션 설정을 추가하려면 다음과 같이 스프링 설정 파일의 루트 엘리먼트인 `beans`에 Context 관련 네임스페이스와 스키마 문서의 위치를 등록해야 한다. 이는 p 네임스페이스를 추가했을 때처럼 [Namespaces] 탭을 선택하고 'context' 항목만 체그하면 간단하게 추가할 수 있다. 
+어노테이션 설정을 추가하려면 다음과 같이 스프링 설정 파일의 루트 엘리먼트인 `<beans>`에 Context 관련 네임스페이스와 스키마 문서의 위치를 등록해야 한다. 이는 p 네임스페이스를 추가했을 때처럼 [Namespaces] 탭을 선택하고 'context' 항목만 체그하면 간단하게 추가할 수 있다. 
+
+수정된 소스는 다음과 같다.
+
+*applicationContext.xml*
+
+```xml
+
+```
 
 ### 컴포넌트 스캔(component-scan) 설정
 
 스프링 설정 파일에 애플리케이션에서 사용할 객체들을 `<bean>` 등록하지 않고 자동으로 생성하려면 `<context:component-scan>`이라는 엘리먼트를 정의해야 한다. 이 설정을 추가하면 스프링 컨테이너는 클래스 패스에 있는 클래스들을 스캔하여 @Component가 설정된 클래스들을 자동으로 객체 생성한다.
 
+*applicationContext.xml*
+
+```xml
+
+```
+
+`<context:component-scan/>` 설정을 제외한 나머지 `<bean>` 설정은 모두 삭제하거나 주석으로 처리하면 된다.
+
+여기서 중요한 것은 `<context:component-scan>` 엘리먼트의 base-package 속성인데, 만약 속성값을 "com.springbook.biz" 형태로 지정하면 com.springbook.biz 패키지로 시작하는 모든 패키지를 스캔 대상에 포함한다. 따라서 다음과 같은 모든 패키지의 클래스들이 스캔 대상이 된다.
+
+```
+
+```
+
 ### @Component
 
 `<context:component-scan>`를 설정했으면 이제 스프링 설정 파일에 클래스들을 일일이 `<bean>` 엘리먼트로 등록할 필요가 없다. @Component만 클래스 선언부 위에 설정하면 끝난다. 예를 들어, LgTV 클래스에 대한 `<bean>` 등록을 XML 설정과 어노테이션 설정으로 처리하면 다음과 같다.
+
+*XML 설정*
+
+```xml
+```
+
+*Annotation 설정*
+
+```java
+```
+
+당연한 얘기겠지만 여기에서 두 설정 모두 해당 클래스에 기본 생성자가 있어야만 컨테이너가 객체를 생성할 수 있다. 이렇게 설정했다면 클래스의 객체가 메모리에 생성되는 것은 문제 없다. 그러나 클라이언트 프로그램에서 LgTV 객체를 요청할 수는 없다. 클라이언트가 스프링 컨테이너가 생성한 객체를 요청하려면, 요청할 때 사용할 아이디나 이름이 반드시 설정되어 있어야 한다.
+
+```
+```
+
+따라서 클라이언트의 요청을 위해서라도 다음과 같이 아이디 설정이 필요하다.
+
+*XML 설정*
+
+```xml
+```
+
+*Annotation 설정*
+
+```java
+```
+
+**※ id나 name 속성 미지정 시 이름 규칙**
+
+
 
 ## 의존성 주입 어노테이션
 
